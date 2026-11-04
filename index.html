@@ -1,0 +1,216 @@
+
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#14233f">
+<meta name="description" content="SkillPassportAG: convierte tus habilidades en oportunidades profesionales.">
+<link rel="manifest" href="manifest.webmanifest">
+<title>SkillPassportAG</title>
+<style>
+*{box-sizing:border-box}
+body{margin:0;background:#f3f6fb;color:#17233b;font-family:Arial,sans-serif}
+header{background:#14233f;color:white;padding:22px;text-align:center}
+header h1{margin:0}
+main{max-width:850px;margin:25px auto;padding:15px}
+.card{background:white;padding:22px;border-radius:15px;margin-bottom:20px;box-shadow:0 4px 20px #14233f12}
+label{display:block;font-weight:bold;margin:15px 0 6px}
+input,textarea,select{width:100%;padding:12px;border:1px solid #dce3ed;border-radius:8px;font:inherit}
+button{padding:12px 18px;border:0;border-radius:8px;background:#365ee8;color:white;font-weight:bold;margin-top:15px;cursor:pointer}
+.secondary{background:#e8edf7;color:#14233f}
+h2{color:#14233f}
+.muted{color:#69758c}
+#result{display:none}
+@media print{
+ header,.form,.actions{display:none}
+ body{background:white}
+ .card{box-shadow:none}
+}
+</style>
+</head>
+<body>
+<header>
+<h1>SkillPassportAG</h1>
+<p>Your skills. Your future.</p>
+</header>
+
+<main>
+<section class="card form">
+<h2 id="heading">Crea tu perfil profesional</h2>
+<p class="muted">Transforma tu experiencia en oportunidades.</p>
+
+<label>Idioma / Language / Langue / Kieli</label>
+<select id="language">
+<option value="es">Español</option>
+<option value="en">English</option>
+<option value="fr">Français</option>
+<option value="fi">Suomi</option>
+</select>
+
+<label id="nameLabel">Nombre completo</label>
+<input id="name" placeholder="Tu nombre">
+
+<label id="jobLabel">Profesión o puesto deseado</label>
+<input id="job" placeholder="Ej. Asistente de construcción">
+
+<label id="locationLabel">Ciudad y país</label>
+<input id="location" placeholder="Ej. Helsinki, Finlandia">
+
+<label id="experienceLabel">Experiencia laboral</label>
+<textarea id="experience" rows="4" placeholder="Describe tu experiencia real..."></textarea>
+
+<label id="skillsLabel">Habilidades</label>
+<textarea id="skills" rows="3" placeholder="Ej. limpieza, cocina, construcción..."></textarea>
+
+<label id="languagesLabel">Idiomas</label>
+<input id="languages" placeholder="Español nativo, inglés básico">
+
+<button id="generate">Crear mi perfil</button>
+<button class="secondary" id="save">Guardar información</button>
+<button class="secondary" id="clear">Borrar información</button>
+<p id="status" class="muted"></p>
+</section>
+
+<section class="card" id="result">
+<h2 id="outName"></h2>
+<h3 id="outJob"></h3>
+<p id="outLocation"></p>
+
+<h3>Perfil profesional</h3>
+<p id="outSummary"></p>
+
+<h3>Experiencia</h3>
+<p id="outExperience"></p>
+
+<h3>Habilidades</h3>
+<p id="outSkills"></p>
+
+<h3>Idiomas</h3>
+<p id="outLanguages"></p>
+
+<div class="actions">
+<button onclick="window.print()">Imprimir / Guardar PDF</button>
+<button class="secondary" id="copy">Copiar perfil</button>
+</div>
+</section>
+</main>
+
+<script>
+const $=id=>document.getElementById(id);
+
+const translations={
+es:{
+heading:"Crea tu perfil profesional",name:"Nombre completo",
+job:"Profesión o puesto deseado",location:"Ciudad y país",
+experience:"Experiencia laboral",skills:"Habilidades",
+languages:"Idiomas",generate:"Crear mi perfil",save:"Guardar información",
+clear:"Borrar información",required:"Completa nombre y profesión.",
+saved:"Información guardada.",cleared:"Información borrada.",
+summary:"Profesional con experiencia en: "
+},
+en:{
+heading:"Create your professional profile",name:"Full name",
+job:"Desired profession or position",location:"City and country",
+experience:"Work experience",skills:"Skills",languages:"Languages",
+generate:"Create my profile",save:"Save information",
+clear:"Clear information",required:"Enter your name and profession.",
+saved:"Information saved.",cleared:"Information cleared.",
+summary:"Professional with experience in: "
+},
+fr:{
+heading:"Créez votre profil professionnel",name:"Nom complet",
+job:"Profession ou poste souhaité",location:"Ville et pays",
+experience:"Expérience professionnelle",skills:"Compétences",
+languages:"Langues",generate:"Créer mon profil",save:"Enregistrer",
+clear:"Effacer les informations",required:"Saisissez votre nom et profession.",
+saved:"Informations enregistrées.",cleared:"Informations effacées.",
+summary:"Professionnel avec expérience en : "
+},
+fi:{
+heading:"Luo ammatillinen profiilisi",name:"Koko nimi",
+job:"Haettu ammatti tai tehtävä",location:"Kaupunki ja maa",
+experience:"Työkokemus",skills:"Taidot",languages:"Kielet",
+generate:"Luo profiili",save:"Tallenna tiedot",
+clear:"Tyhjennä tiedot",required:"Anna nimesi ja ammattisi.",
+saved:"Tiedot tallennettu.",cleared:"Tiedot tyhjennetty.",
+summary:"Ammattilainen, jolla on kokemusta: "
+}
+};
+
+function translate(){
+const t=translations[$("language").value];
+$("heading").textContent=t.heading;
+["name","job","location","experience","skills","languages"].forEach(id=>{
+$(id+"Label").textContent=t[id];
+});
+$("generate").textContent=t.generate;
+$("save").textContent=t.save;
+$("clear").textContent=t.clear;
+}
+$("language").onchange=translate;
+
+function fields(){
+return ["name","job","location","experience","skills","languages"];
+}
+function getData(){
+return Object.fromEntries(fields().map(id=>[id,$(id).value.trim()]));
+}
+function render(){
+const d=getData();
+$("outName").textContent=d.name;
+$("outJob").textContent=d.job;
+$("outLocation").textContent=d.location;
+$("outSummary").textContent=translations[$("language").value].summary+d.experience;
+$("outExperience").textContent=d.experience;
+$("outSkills").textContent=d.skills;
+$("outLanguages").textContent=d.languages;
+$("result").style.display="block";
+}
+
+$("generate").onclick=()=>{
+const d=getData();
+if(!d.name||!d.job){
+$("status").textContent=translations[$("language").value].required;
+return;
+}
+render();
+localStorage.setItem("skillpassportag",JSON.stringify(d));
+};
+
+$("save").onclick=()=>{
+localStorage.setItem("skillpassportag",JSON.stringify(getData()));
+$("status").textContent=translations[$("language").value].saved;
+};
+
+$("clear").onclick=()=>{
+if(!confirm("¿Deseas borrar toda tu información?"))return;
+fields().forEach(id=>$(id).value="");
+localStorage.removeItem("skillpassportag");
+$("result").style.display="none";
+$("status").textContent=translations[$("language").value].cleared;
+};
+
+$("copy").onclick=async()=>{
+const d=getData();
+const content=fields().map(id=>$(id).value).join("\n");
+try{
+await navigator.clipboard.writeText(content);
+$("status").textContent="Perfil copiado.";
+}catch(e){
+$("status").textContent="No se pudo copiar.";
+}
+};
+
+try{
+const d=JSON.parse(localStorage.getItem("skillpassportag")||"{}");
+fields().forEach(id=>$(id).value=d[id]||"");
+}catch(e){}
+translate();
+
+if("serviceWorker" in navigator && location.protocol==="https:"){
+navigator.serviceWorker.register("./sw.js").catch(console.error);
+}
+</script>
+</body>
+</html>
